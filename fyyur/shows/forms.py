@@ -1,10 +1,10 @@
-from flask_wtf import Form 
+from flask_wtf import FlaskForm
 from wtforms.validators import DataRequired, AnyOf, URL, ValidationError
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, IntegerField
 from fyyur.models import Show
 from datetime import datetime
 
-class ShowForm(Form):
+class ShowForm(FlaskForm):
     artist_id = IntegerField(
         'artist_id'
     )

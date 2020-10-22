@@ -1,10 +1,10 @@
-from flask_wtf import Form 
+from flask_wtf import FlaskForm
 from wtforms.validators import DataRequired, ValidationError
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, IntegerField
 from fyyur.models import Artist
 from wtforms.validators import DataRequired, AnyOf, URL, ValidationError
 
-class ArtistForm(Form):
+class ArtistForm(FlaskForm):
     name = StringField(
         'name', validators=[DataRequired()]
     )
@@ -104,6 +104,8 @@ class ArtistForm(Form):
             ('Other', 'Other'),
         ], default = 'Select'
     )
+    seeking_venue = BooleanField('Yes Seeking Venue')
+    seeking_description = StringField('seeking_description')
     facebook_link = StringField(
         # TODO implement enum restriction
         'facebook_link', validators=[URL()]

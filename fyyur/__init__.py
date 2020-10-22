@@ -15,8 +15,6 @@ moment = Moment(app)
 app.config.from_object(Config)
 db = SQLAlchemy()
 db.init_app(app)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:2941@localhost:5432/fyyur'
 migrate = Migrate(app, db)
 
 def format_datetime(value, format='medium'):

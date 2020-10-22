@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, request, Response, flash, redirect, url_for
-from fyyur.models import Venue
+from fyyur.models import Venue, Artist, Show
 from fyyur.venues.forms import VenueForm
 from fyyur import db
 import psycopg2
+import sys
 from datetime import datetime
 
 venues_bluebrint = Blueprint('venues', __name__)
@@ -11,30 +12,19 @@ venues_bluebrint = Blueprint('venues', __name__)
 def venues():
   # Done: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
-  conn = psycopg2.connect(dbname='fyyur', user='postgres', password='2941')
-  cur = conn.cursor()
-  cur.execute('SELECT state, city From "Venue" GROUP BY (state, city);')
-  state_city = cur.fetchall()
-  data = []
-  venues = []
-  for state_city in state_city:
-    city = state_city[1]
-    state = state_city[0]
-    cur.execute(f'''SELECT id, name from "Venue" where state='{state_city[0]}' AND city='{state_city[1]}';''')
-    places = cur.fetchall()
-    for place in places:
-      id = place[0]
-      name = place[1]
-      venues.append({'id' : id, 'name' : name})
-    data.append({'city': state_city[1],
-                  'state' : state_city[0],
-                  'venues' : venues})
-    venues = []
-  # print(data)
-  conn.commit()
-  cur.close()
-  conn.close()
-  return render_template('pages/venues.html', areas=data)
+  locals = []
+  venues = Venue.query.all()
+  for place in Venue.query.distinct(Venue.city, Venue.state).all():
+      locals.append({
+          'city': place.city,
+          'state': place.state,
+          'venues': [{
+              'id': venue.id,
+              'name': venue.name,
+          } for venue in venues if
+              venue.city == place.city and venue.state == place.state]
+      })
+  return render_template('pages/venues.html', areas=locals)
 
 
 @venues_bluebrint.route('/venues/search', methods=['POST'])
@@ -66,26 +56,32 @@ def search_venues():
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # Done: replace with real venue data from the venues table, using venue_id
-  venue = Venue.query.get(venue_id)
+  venue = Venue.query.filter_by(id=venue_id).first_or_404()
+  # For past_shows:
   venue_shows = {}
+  past_shows = db.session.query(Venue, Show).join(Show, Venue.id==Show.venue_id).\
+    filter(Venue.id == venue_id,
+          Show.start_time < datetime.now()).all()
+  # For upcoming_shows:
+  upcoming_shows = db.session.query(Venue, Show).join(Show, Venue.id==Show.venue_id).\
+    filter(Venue.id == venue_id,
+          Show.start_time > datetime.now()).all()
   
-  venue_shows['past_shows_count'] = 0
-  venue_shows['upcoming_shows_count'] = 0
-  venue_shows['upcoming_shows'] = []
-  venue_shows['past_shows'] = []
-  for show in venue.shows_venue:
-    if show.start_time > datetime.now():
-      venue_shows['upcoming_shows_count'] += 1
-      venue_shows['upcoming_shows'].append({'artist_name': show.artist.name,
-                                            'start_time':show.start_time,
-                                            'artist_image_link':  show.artist.image_link,
-                                            'artist_id' : show.artist.id})
-    else:
-      venue_shows['past_shows_count'] += 1
-      venue_shows['past_shows'].append({'artist_name': show.artist.name,
-                                            'start_time':show.start_time,
-                                            'artist_image_link':  show.artist.image_link,
-                                            'artist_id' : show.artist.id})
+  venue_shows = {'past_shows':[{
+              'artist_id': show.artist.id,
+              'artist_name': show.artist.name,
+              'artist_image_link': show.artist.image_link,
+              "start_time": show.start_time.strftime("%m/%d/%Y, %H:%M")
+          } for venue, show in past_shows],
+          'upcoming_shows': [{
+              'artist_id': show.artist.id,
+              'artist_name': show.artist.name,
+              'artist_image_link': show.artist.image_link,
+              'start_time': show.start_time.strftime("%m/%d/%Y, %H:%M")
+          } for venue, show in upcoming_shows],
+          'past_shows_count': len(past_shows),
+          'upcoming_shows_count': len(upcoming_shows)
+                }
   return render_template('pages/show_venue.html', venue=venue, venue_shows=venue_shows)
 
 #  Create Venue
@@ -100,8 +96,7 @@ def create_venue_form():
 def create_venue_submission():
   # Done: insert form data as a new Venue record in the db, instead
   # Done: modify data to be the data object returned from db insertion
-  form = VenueForm()
-  
+  form = VenueForm(request.form)
   try:
     # validate form 
     if form.validate_on_submit():
@@ -111,20 +106,12 @@ def create_venue_submission():
         # print('existed')
         flash(venue.name + ' Alread exists!', 'warning')
         return redirect(url_for('venues.create_venue_form'))
-      new_venue = Venue(name=form.name.data,
-                      city=form.city.data,
-                      state=form.state.data,
-                      address=form.address.data,
-                      phone=form.phone.data,
-                      image_link=form.image_link.data,
-                      genres=form.genres.data,
-                      facebook_link=form.facebook_link.data,
-                      )
-  
-      db.session.add(new_venue)
+      venue = Venue()
+      form.populate_obj(venue)
+      db.session.add(venue)
       db.session.commit()
-      flash('Venue ' + new_venue.name + ' was successfully listed!', 'success')
-      return redirect(url_for('venues.show_venue', venue_id=new_venue.id))
+      flash('Venue ' + venue.name + ' was successfully listed!', 'success')
+      return redirect(url_for('venues.show_venue', venue_id=venue.id))
     else:
       flash("Edit the following errors:", 'warning')
       for error in form.errors.values():
@@ -162,19 +149,11 @@ def delete_venue(venue_id):
 
 @venues_bluebrint.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
-  form = VenueForm()
+  
   #get the venue by id
-  venue= Venue.query.get(venue_id)
-  #fill the form with current venue data 
-  form.name.data = venue.name
-  form.city.data = venue.city
-  form.state.data = venue.state
-  form.address.data = venue.address
-  form.phone.data = venue.phone
-  form.genres.data = venue.genres
-  form.facebook_link.data = venue.facebook_link
-  form.image_link.data = venue.image_link
-  form.website.data = venue.website
+  venue = Venue.query.first_or_404(venue_id)
+  #fill the form with current venue data
+  form = VenueForm(obj=venue)
 
   # Done: populate form with values from venue with ID <venue_id>
   return render_template('forms/edit_venue.html', form=form, venue=venue)

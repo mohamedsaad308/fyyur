@@ -1,9 +1,9 @@
-from flask_wtf import Form 
+from flask_wtf import FlaskForm
 from wtforms.validators import DataRequired, AnyOf, URL, ValidationError
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, IntegerField
 from fyyur.models import Venue
 
-class VenueForm(Form):
+class VenueForm(FlaskForm):
     name = StringField(
         'name', validators=[DataRequired()]
     )
@@ -104,8 +104,8 @@ class VenueForm(Form):
             ('Other', 'Other'),
         ]
     )
-    seeking_venue = BooleanField('Seeking Venue')
-    venue_description = StringField('venue_description')
+    seeking_talent = BooleanField('Seeking Talent')
+    seeking_description = StringField('venue_description')
     facebook_link = StringField(
         'facebook_link', validators=[URL()]
     )
