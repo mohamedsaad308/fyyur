@@ -78,15 +78,21 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
   # Done: take values from the form submitted, and update existing
   # artist record with ID <artist_id> using the new attributes
-  form = ArtistForm(request.form)
+  form = ArtistForm()
   artist = Artist.query.get(artist_id)
   try:
+    # print('try')
     if form.validate_on_submit():
       form.populate_obj(artist)
       db.session.commit()
       flash('Artist ' + artist.name + ' was successfully edited!', 'success')
+    else:
+      flash("Edit the following errors:", 'warning')
+      for error in form.errors.values():
+        flash(error[0], 'warning')
+        return redirect(url_for('artists.edit_artist_submission', artist_id=artist_id))
   except:
-    print(sys.exc_info())
+    print( sys.exc_info())
     db.session.rollback()
   finally:
     db.session.close()

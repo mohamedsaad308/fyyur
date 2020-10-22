@@ -149,7 +149,7 @@ def edit_venue(venue_id):
   print(venue)
   #fill the form with current venue data
   form = VenueForm(obj=venue)
-  form.name.data = venue.name
+  form.genres.data = venue.genres
 
   # Done: populate form with values from venue with ID <venue_id>
   return render_template('forms/edit_venue.html', form=form, venue=venue)
@@ -167,12 +167,15 @@ def edit_venue_submission(venue_id):
       form.populate_obj(venue)
       db.session.commit()
       flash('Venue ' + venue.name + ' was successfully edited!', 'success')
+    else:
+      flash("Edit the following errors:", 'warning')
+      for error in form.errors.values():
+        flash(error[0], 'warning')
   except:
-    print('except')
+
     print(sys.exc_info())
     db.session.rollback()
+
   finally:
-    print(form.errors)
-    print('finally')
     db.session.close()
   return redirect(url_for('venues.show_venue', venue_id=venue_id))

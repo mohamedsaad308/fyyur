@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms.validators import DataRequired, AnyOf, URL, ValidationError
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, IntegerField
 from fyyur.models import Venue
-
+import re
 class VenueForm(FlaskForm):
     name = StringField(
         'name', validators=[DataRequired()]
@@ -114,5 +114,7 @@ class VenueForm(FlaskForm):
     #     if venue:
     #         raise ValidationError("This venue already exists!")
     def validate_phone(self, phone):
-        if len(phone.data) > 16:
+        pattern = "\d{3}[\-]\d{3}[\-]\d{4}"
+        if not re.match(pattern, phone.data):
+            
             raise ValidationError('Invalid phone number.')

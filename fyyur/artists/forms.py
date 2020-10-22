@@ -3,6 +3,7 @@ from wtforms.validators import DataRequired, ValidationError
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField, IntegerField
 from fyyur.models import Artist
 from wtforms.validators import DataRequired, AnyOf, URL, ValidationError
+import re
 
 class ArtistForm(FlaskForm):
     name = StringField(
@@ -115,5 +116,7 @@ class ArtistForm(FlaskForm):
     #     if venue:
     #         raise ValidationError("This venue already exists!")
     def validate_phone(self, phone):
-        if len(phone.data) > 16:
+        pattern = "\d{3}[\-]\d{3}[\-]\d{4}"
+        if not re.match(pattern, phone.data):
+            
             raise ValidationError('Invalid phone number.')
