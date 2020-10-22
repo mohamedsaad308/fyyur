@@ -34,17 +34,10 @@ def search_venues():
   # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
   data = []
   search_term = request.form.get('search_term', '')
-  search_term_sql = f'%{search_term}%'
-  conn = psycopg2.connect(dbname='fyyur', user='postgres', password='2941')
-  cur = conn.cursor()
-  cur.execute('SELECT id, name from "Venue" WHERE name ILIKE %s;', [search_term_sql])
-  results = cur.fetchall()
-  count = len(results)
+  results = Venue.query.filter(Venue.name.ilike(f'%{search_term}%'))
+  count = results.count()
   for result in results:
-    data.append({'id':result[0], 'name':result[1]})
-  conn.commit()
-  cur.close()
-  conn.close()
+    data.append({'id':result.id, 'name':result.name})
 
   response={
     "count": count,
