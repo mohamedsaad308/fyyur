@@ -41,6 +41,14 @@
         <label for="genres">Website Link</label>
         {{ form.website(class_ = 'form-control', placeholder='http://', autofocus = true) }}
     </div>
+    <div class="form-group">
+      <label for="phone">Seeking Talent</label>
+      {{ form.seeking_talent(class_ = 'form-control', placeholder='State', autofocus = true) }}
+    </div>
+    <div class="form-group">
+      <label for="name">Description</label>
+      {{ form.seeking_description(class_ = 'form-control', autofocus = true) }}
+    </div>
       <div class="form-group">
           <label for="genres">Facebook Link</label>
           {{ form.facebook_link(class_ = 'form-control', placeholder='http://', autofocus = true) }}

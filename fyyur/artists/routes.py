@@ -67,7 +67,7 @@ def show_artist(artist_id):
 #  ----------------------------------------------------------------
 @artists_blueprint.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
-  artist = Artist.query.first_or_404(artist_id)
+  artist = Artist.query.get(artist_id)
   form = ArtistForm(obj=artist)
   form.genres.data = artist.genres
 

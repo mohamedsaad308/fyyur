@@ -144,9 +144,12 @@ def delete_venue(venue_id):
 def edit_venue(venue_id):
   
   #get the venue by id
-  venue = Venue.query.first_or_404(venue_id)
+  print(venue_id)
+  venue = Venue.query.get(venue_id)
+  print(venue)
   #fill the form with current venue data
   form = VenueForm(obj=venue)
+  form.name.data = venue.name
 
   # Done: populate form with values from venue with ID <venue_id>
   return render_template('forms/edit_venue.html', form=form, venue=venue)
@@ -161,16 +164,7 @@ def edit_venue_submission(venue_id):
   try:
     print('we are on try')
     if form.validate_on_submit():
-      print('form is valid')
-      venue.name = form.name.data
-      venue.website  = form.website.data
-      venue.city=form.city.data
-      venue.state=form.state.data
-      venue.address = form.address.data
-      venue.phone = form.phone.data
-      venue.image_link = form.image_link.data
-      venue.genres=form.genres.data
-      venue.facebook_link=form.facebook_link.data
+      form.populate_obj(venue)
       db.session.commit()
       flash('Venue ' + venue.name + ' was successfully edited!', 'success')
   except:
